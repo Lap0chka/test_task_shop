@@ -1,0 +1,25 @@
+{%  extends "base.html" %}
+{%block title%}Account delete{%endblock%}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<br>
+
+<div class="container bg-white shadow-md p-5 form-layout">
+    
+    <h3>Are you sure you want to delete your account?</h3>
+    
+    <br>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+
+        <button type="submit" class="btn btn-secondary w-100 btn-block p-2 btn-register">Delete account</button>
+    </form>
+
+</div>
+
+<br>
+
+{% endblock %}

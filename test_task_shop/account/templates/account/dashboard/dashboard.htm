@@ -1,0 +1,37 @@
+{%  extends "base.html" %}
+{%block title%} Dashboard {%endblock%}
+{% block content %}
+
+    <br>
+    <div class="container bg-white shadow-md p-3">
+        <h4>Welcome, {{ user.username }}!</h4>
+
+        <hr>
+
+        <h6>Personal information</h6>
+
+        <a href="{% url 'account:logout' %}">
+        <button class="btn btn-primary">
+            Logout
+            </button>
+        </a>
+
+        <a href="{% url 'account:profile_user' %}">
+            <button class="btn btn-success">
+                Profile-management
+                </button>
+            </a>
+          <a href="{% url 'payment:shipping' %}">
+                <button class="btn btn-success">
+                    Shipping info
+                    </button>
+                </a>
+            <a href="{% url 'account:profile_delete' %}">
+                <button class="btn btn-warning">
+                    Delete Account
+                    </button>
+                </a>
+
+
+    </div>
+{% endblock %}
