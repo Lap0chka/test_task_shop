@@ -1,0 +1,55 @@
+{%  extends "base.html" %}
+{%block title%}Checkout{%endblock%}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+
+<body>
+
+<br>
+
+<div class="container bg-white shadow-md p-5" style="width:500px; border-radius:20px;">
+
+    <form id="form" method="POST" action='{% url "payment:complete_order" %}'>
+    {%csrf_token%}
+        <div>
+
+            <h3><i class="fa fa-chevron-circle-right" aria-hidden="true"></i> &nbsp; Complete your order </h3>
+
+            <p> Please enter in the relevant information below. </p>
+
+
+            <hr>
+
+            <br>
+
+            {% csrf_token %}
+            {{ shipping_address|crispy }}
+
+        </div>
+
+        <br>
+
+
+        <button id="complete-order" type="submit" name="stripe-payment" value="stripe-payment" class="btn btn-primary navbar-btn text-white"> &nbsp; Complete order
+        </button>
+
+
+        <br>
+
+
+    </form>
+
+
+</div>
+
+
+<br>
+
+
+</body>
+
+
+
+{% endblock %}

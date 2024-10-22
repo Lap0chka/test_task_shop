@@ -50,7 +50,7 @@ def logout_user(request):
 
 @login_required(login_url='account:login')
 def dashboard(request):
-    return render(request, 'account/dashboard/dashboard.htm')
+    return render(request, 'account/dashboard/dashboard.html')
 
 
 @login_required(login_url='account:login')
