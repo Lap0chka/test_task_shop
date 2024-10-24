@@ -15,7 +15,6 @@ urlpatterns = [
     path('logout/', views.logout_user, name='logout'),
     # Dashboard
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('profile/', views.profile_user, name='profile_user'),
     path('delete-account/', views.delete_account, name='profile_delete'),
     # Password reset
     path('password-reset/', auth_views.PasswordResetView.as_view(

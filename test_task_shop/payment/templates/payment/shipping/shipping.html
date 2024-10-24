@@ -1,6 +1,5 @@
 {%  extends "base.html" %}
 {%block title%}Shipping{%endblock%}
-{% load crispy_forms_tags %}
 
 {% block content %}
 
@@ -12,7 +11,7 @@
 
     <form method="post">
         {% csrf_token %}
-        {{ form|crispy }}
+        {{ form.as_p }}
         <button type="submit" class="btn btn-secondary w-100 btn-block p-2 btn-register">Send</button>
     </form>
 

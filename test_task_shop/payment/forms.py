@@ -8,5 +8,3 @@ class ShippingForm(forms.ModelForm):
         fields = ('full_name', 'email', 'street_address', 'apartment_address', 'city', 'country', 'zip')
 
 
-class ShippingFormWithSave(ShippingForm):
-    is_save = forms.BooleanField(required=False)

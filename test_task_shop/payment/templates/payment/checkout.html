@@ -1,6 +1,5 @@
 {%  extends "base.html" %}
 {%block title%}Checkout{%endblock%}
-{% load crispy_forms_tags %}
 
 {% block content %}
 
@@ -25,7 +24,7 @@
             <br>
 
             {% csrf_token %}
-            {{ shipping_address|crispy }}
+            {{ shipping_address.as_p }}
 
         </div>
 

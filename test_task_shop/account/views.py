@@ -7,7 +7,6 @@ from django.contrib.auth.models import User
 from django.shortcuts import redirect, render
 
 
-
 def register(request):
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
@@ -51,11 +50,6 @@ def logout_user(request):
 @login_required(login_url='account:login')
 def dashboard(request):
     return render(request, 'account/dashboard/dashboard.html')
-
-
-@login_required(login_url='account:login')
-def profile_user(request):
-    return render(request, 'account/dashboard/profile_user.html',)
 
 
 @login_required(login_url='account:login')

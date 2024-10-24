@@ -1,7 +1,6 @@
 from decimal import Decimal
 
 import stripe
-import weasyprint
 from django.contrib.admin.views.decorators import staff_member_required
 from django.template.loader import render_to_string
 from django.templatetags.static import static
@@ -12,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from payment.forms import ShippingForm, ShippingFormWithSave
+from payment.forms import ShippingForm
 from payment.models import Order, OrderItem, ShippingAddress
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -45,7 +44,7 @@ def checkout(request):
         except TypeError:
             shipping_address = None
 
-    shipping_address = ShippingFormWithSave(instance=shipping_address)
+    shipping_address = ShippingForm(instance=shipping_address)
     return render(request, 'payment/checkout.html', {'shipping_address': shipping_address})
 
 
@@ -54,20 +53,9 @@ def complete_order(request):
         form = ShippingForm(request.POST)
         if form.is_valid():
             shipping_address = form.save(commit=False)
-            if request.user.is_authenticated:
-                user = request.user
-                shipping_address.user = user
-                is_save = form.cleaned_data['is_save', False]
-                if is_save:
-                    try:
-                        shipping_address_old = ShippingAddress.objects.get(user=user)
-                        shipping_address_old.delete()
-                    except TypeError:
-                        pass
-                shipping_address.save()
-            else:
-                user = None
-                shipping_address.save()
+            user = request.user if request.user.is_authenticated else None
+            shipping_address.user = user
+            shipping_address.save()
 
         cart = Cart(request)
         total_price = cart.get_total_price()
@@ -121,7 +109,45 @@ def admin_order_pdf(request, order_id):
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'filename=order_{order.id}.pdf'
     css_path = static('css/pdf.css').lstrip('/')
-    # css_path = 'static/payment/css/pdf.css'
-    stylesheets = [weasyprint.CSS(css_path)]
-    weasyprint.HTML(string=html).write_pdf(response, stylesheets=stylesheets)
     return response
+
+#
+#
+# def create_invoice_bit_pay(request):
+#     order = get_order_from_session(request)
+#     if not order:
+#         return redirect('cart:cart_view')
+#
+#     url = f"{API_URI}/invoices"
+#     cart = Cart(request)
+#     total_price = cart.get_total_price()
+#
+#     headers = {
+#         "accept": "application/json",
+#         "Content-Type": "application/json",
+#         "X-Accept-Version": "2.0.0"
+#     }
+#
+#     payload = {
+#         "token": API_TOKEN,
+#         "price": float(total_price),
+#         "currency": 'USD',
+#         "orderId": order.id,
+#         "itemDesc": "Nike and Adidas",
+#         "itemizedDetails": {
+#             "isFee": False,
+#             "amount": "2",
+#             "description": "Helllo"
+#         },
+#     }
+#     try:
+#         response = requests.post(url, json=payload, headers=headers)
+#         response.raise_for_status()
+#         print(response.text)
+#     except requests.exceptions.HTTPError as e:
+#         error_message = f"HTTP error occurred: {e.response.status_code} - {e.response.text}"
+#         print(error_message)
+#         return {"error": error_message}
+#
+#     # Если запрос не POST или форма не валидна, перенаправляем обратно на страницу оформления заказа
+#     return JsonResponse({"error": "Invalid request"}, status=400)
