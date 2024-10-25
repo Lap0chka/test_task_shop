@@ -1,7 +1,6 @@
 from django.db import models
 from django.urls import reverse
-
-
+from django.utils.text import slugify
 
 
 class ProductManage(models.Manager):
@@ -16,6 +15,35 @@ class ProductManage(models.Manager):
         return super().get_queryset().filter(is_available=True)
 
 
+class Category(models.Model):
+    """
+    Represents a category for organizing products.
+    """
+    name = models.CharField(max_length=124, db_index=True)
+    parent = models.ForeignKey(
+        'self', on_delete=models.CASCADE, null=True, blank=True, related_name='children'
+    )
+    slug = models.SlugField(max_length=140, unique=True, null=False)
+    create_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = (['slug', 'parent'])
+        verbose_name_plural = 'Categories'
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse('shop:category_list', args=[self.slug])
+
+    def save(self, *args, **kwargs):
+        """
+        Save the category instance to the database.
+        """
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
 class Product(models.Model):
     """
     Represents a product in the catalog.
@@ -29,6 +57,7 @@ class Product(models.Model):
     is_available = models.BooleanField(default=False)
     create_at = models.DateTimeField(auto_now_add=True)
     update_at = models.DateTimeField(auto_now=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products',)
 
     available = ProductManage()
     objects = models.Manager()
@@ -51,3 +80,11 @@ class Product(models.Model):
         """
         discounted_price = self.price - (self.price * self.discount / 100)
         return round(discounted_price, 2)
+
+    def save(self, *args, **kwargs):
+        """
+        Save the category instance to the database.
+        """
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)

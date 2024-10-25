@@ -101,7 +101,7 @@ celerybeat-schedule.*
 .migrations
 .migrations/
 # Environments
-.env
+test_task_shop/.env
 .venv
 env/
 venv/
@@ -223,7 +223,7 @@ celerybeat-schedule
 *.sage.py
 
 # dotenv
-.env
+test_task_shop/.env
 
 # virtualenv
 .venv
