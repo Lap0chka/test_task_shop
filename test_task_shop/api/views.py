@@ -4,6 +4,7 @@ import stripe
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
@@ -14,9 +15,10 @@ from shop.models import Product
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
-class ProductViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Product.available.all()  # Предположим, что у вас есть менеджер .available для доступных товаров
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.available.all()
     serializer_class = ProductSerializer
+    permission_classes = [AllowAny]
 
 
 class CompleteOrderAPIView(APIView):

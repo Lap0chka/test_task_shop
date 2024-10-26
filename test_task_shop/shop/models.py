@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
@@ -58,6 +59,8 @@ class Product(models.Model):
     create_at = models.DateTimeField(auto_now_add=True)
     update_at = models.DateTimeField(auto_now=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products',)
+    discount = models.IntegerField(
+        default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
 
     available = ProductManage()
     objects = models.Manager()
