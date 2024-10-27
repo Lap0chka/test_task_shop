@@ -12,12 +12,19 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from django.utils.text import slugify
 from urls import urls
+import environ
+from pathlib import Path
 
-TOKEN = '7878094227:AAFrz_Pjo1ogi8lLoJUc_Gm0533cz8WbWcQ'
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+env = environ.Env()
+env.read_env(BASE_DIR / '.env')
+
+TOKEN = env('TG_BOT_TOKEN')
 
 logging.basicConfig(level=logging.INFO)
 
-from aiogram.fsm.state import State, StatesGroup
+
 
 class AdminPanel(StatesGroup):
     """State group representing different actions in the admin panel."""
@@ -87,7 +94,7 @@ class TelegramBot:
         self.router.message(lambda message: message.text == 'Delete')(self.delete_product)
         self.router.message(lambda message: message.text == 'Add')(self.add_product)
         self.router.message(lambda message: message.text == 'Back')(self.back_to_main_menu)
-        self.router.message.register(self.find_goods, AdminPanel.get_goods)
+        self.router.message.register(self.find_goods, AdminPanel.get)
         self.router.message.register(self.send_patch, AdminPanel.patch)
         self.router.message.register(self.send_delete, AdminPanel.delete)
         self.router.message.register(self.send_post, AdminPanel.post)
