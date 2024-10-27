@@ -13,7 +13,7 @@ from django.utils.text import slugify
 fake = Faker()
 
 categories = []
-for _ in range(10):
+for _ in range(2):
     name = fake.word()
     slug = slugify(name)
     category = Category.objects.create(name=name, slug=slug)

@@ -1,5 +1,5 @@
-from django.contrib import messages
-from django.shortcuts import get_object_or_404, render, redirect
+from PIL.ImagePalette import random
+from django.shortcuts import get_object_or_404, render
 from django.views.generic import ListView
 
 from .models import Product
@@ -21,7 +21,8 @@ def product_detail(request, slug):
     View to display the details of a specific product.
     """
     product = get_object_or_404(Product, slug=slug)
-    context = {'product': product}
+    random_products = Product.available.order_by('?')[:4]
+    context = {'product': product, 'products': random_products}
     return render(request, 'shop/product_detail.html', context)
 
 

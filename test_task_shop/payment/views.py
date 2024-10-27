@@ -2,6 +2,8 @@ from decimal import Decimal
 
 import stripe
 from django.contrib.admin.views.decorators import staff_member_required
+import requests
+from django.core.exceptions import ObjectDoesNotExist
 from django.template.loader import render_to_string
 from django.templatetags.static import static
 
@@ -39,10 +41,9 @@ def shipping_view(request):
 
 def checkout(request):
     if request.user.is_authenticated:
-        try:
-            shipping_address = ShippingAddress.objects.get(user=request.user)
-        except TypeError:
-            shipping_address = None
+        shipping_address = ShippingAddress.objects.filter(user=request.user).first()
+    else:
+        shipping_address = None
 
     shipping_address = ShippingForm(instance=shipping_address)
     return render(request, 'payment/checkout.html', {'shipping_address': shipping_address})
@@ -54,6 +55,13 @@ def complete_order(request):
         if form.is_valid():
             shipping_address = form.save(commit=False)
             user = request.user if request.user.is_authenticated else None
+            type_payment = request.POST.get('type_payment')
+
+
+            if user:
+                last_address = ShippingAddress.objects.filter(user=request.user).first()
+                last_address.delete()
+
             shipping_address.user = user
             shipping_address.save()
 
@@ -83,10 +91,42 @@ def complete_order(request):
                 },
                 'quantity': item['quantity']
             })
-        session_data['client_reference_id'] = order.id
-        session = stripe.checkout.Session.create(**session_data)
-        return redirect(session.url, code=303)
+        if 'crypto-payment' not in type_payment:
+            session_data['client_reference_id'] = order.id
+            session = stripe.checkout.Session.create(**session_data)
+            return redirect(session.url, code=303)
+        return create_invoice_bit_pay(session_data)
 
+def create_invoice_bit_pay(session_data):
+    token_bitpay = settings.BITPAY_SECRET
+    url = "https://test.bitpay.com/invoices"
+
+    session_data["token"] = token_bitpay
+    payload = {
+        "token": token_bitpay,
+        "price": float(100),
+        "currency": 'USD',
+        "orderId": 3,
+        "notificationURL": "http://127.0.0.1:4421/payment/webhook-bitpay/",
+        "itemDesc": "Nike and Adidas",
+        "autoRedirect": True,
+        "itemizedDetails": {
+            "isFee": False,
+            "amount": "2",
+            "description": "Helllo"
+        },
+    }
+    try:
+        response = requests.post(url, json=payload)
+        data = response.json()
+        url = data['data']['url']
+        return HttpResponse(f'Your link for pay: {url}', content_type="text/html")
+    except requests.exceptions.HTTPError as e:
+        error_message = f"HTTP error occurred: {e.response.status_code} - {e.response.text}"
+        print(error_message)
+        return {"error": error_message}
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
 
 def payment_success(request):
     for key in list(request.session.keys()):
@@ -111,43 +151,6 @@ def admin_order_pdf(request, order_id):
     css_path = static('css/pdf.css').lstrip('/')
     return response
 
-#
-#
-# def create_invoice_bit_pay(request):
-#     order = get_order_from_session(request)
-#     if not order:
-#         return redirect('cart:cart_view')
-#
-#     url = f"{API_URI}/invoices"
-#     cart = Cart(request)
-#     total_price = cart.get_total_price()
-#
-#     headers = {
-#         "accept": "application/json",
-#         "Content-Type": "application/json",
-#         "X-Accept-Version": "2.0.0"
-#     }
-#
-#     payload = {
-#         "token": API_TOKEN,
-#         "price": float(total_price),
-#         "currency": 'USD',
-#         "orderId": order.id,
-#         "itemDesc": "Nike and Adidas",
-#         "itemizedDetails": {
-#             "isFee": False,
-#             "amount": "2",
-#             "description": "Helllo"
-#         },
-#     }
-#     try:
-#         response = requests.post(url, json=payload, headers=headers)
-#         response.raise_for_status()
-#         print(response.text)
-#     except requests.exceptions.HTTPError as e:
-#         error_message = f"HTTP error occurred: {e.response.status_code} - {e.response.text}"
-#         print(error_message)
-#         return {"error": error_message}
-#
-#     # Если запрос не POST или форма не валидна, перенаправляем обратно на страницу оформления заказа
-#     return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+

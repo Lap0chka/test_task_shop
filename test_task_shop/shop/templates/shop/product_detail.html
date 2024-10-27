@@ -38,9 +38,11 @@
 
                             <div class="col-6"> Price </div>
 
-
+                            {% if product.discount %}
+                            <div class="col-6 text-end"><span class="text-decoration-line-through fw-bold text-danger">$ {{product.price}} <span class="badge rounded-pill bg-info">discount</span></span> <span class="h4 fw-bold">$ {{product.get_discounted_price}}</span></div>
+                            {% else%}
                             <div class="col-6 text-end"><span class="h4 fw-bold">$ {{product.price}}</span></div>
-
+                            {% endif %}
 
                         </div>
 
@@ -93,7 +95,11 @@
         </div>
 
     </main>
-
+    <h2>Popular items</h2>
+    <br>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-3">
+        {% include 'shop/components/product_list.html' %}
+    </div>
     <br>
 </div>
 <script>

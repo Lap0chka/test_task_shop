@@ -40,3 +40,11 @@ def stripe_webhook(request):
 
 
     return HttpResponse(status=200)
+
+
+@csrf_exempt
+def bitpay_webhook(request):
+    print(request)
+    payload = request.body
+    print(payload)
+    return HttpResponse(payload, status=200)

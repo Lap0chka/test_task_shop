@@ -54,7 +54,8 @@ class Product(models.Model):
     brand = models.CharField(max_length=248)
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=7, decimal_places=2, default=99.99)
-    image = models.ImageField(upload_to='images/products/%Y/%m/%d', blank=True, default='images/default.jpg')
+    image = models.ImageField(upload_to='images/products/%d-%m-%Y',
+                              blank=True, default='images/products/default/default.jpg')
     is_available = models.BooleanField(default=False)
     create_at = models.DateTimeField(auto_now_add=True)
     update_at = models.DateTimeField(auto_now=True)
