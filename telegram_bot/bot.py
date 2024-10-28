@@ -1,29 +1,28 @@
+import asyncio
+import logging
+from pathlib import Path
 from typing import Dict
 
 import aiohttp
-import asyncio
-import logging
+import environ
 import requests
-from aiogram import Bot, Dispatcher, types, Router
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram import Bot, Dispatcher, Router, types
 from aiogram.filters import Command
-from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 from django.utils.text import slugify
 from urls import urls
-import environ
-from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env()
-env.read_env(BASE_DIR / '.env')
+env.read_env(BASE_DIR / ".env")
 
-TOKEN = env('TG_BOT_TOKEN')
+TOKEN = env("TG_BOT_TOKEN")
 
 logging.basicConfig(level=logging.INFO)
-
 
 
 class AdminPanel(StatesGroup):
@@ -63,79 +62,98 @@ class TelegramBot:
         self.catalog_data: Dict[str, Dict] = {}
         self.menu = ReplyKeyboardMarkup(
             keyboard=[
-                [KeyboardButton(text='Catalog')],
-                [KeyboardButton(text='Make Order')],
-                [KeyboardButton(text='Admin')]
+                [KeyboardButton(text="Catalog")],
+                [KeyboardButton(text="Make Order")],
+                [KeyboardButton(text="Admin")],
             ],
-            resize_keyboard=True
+            resize_keyboard=True,
         )
         self.admin_menu = ReplyKeyboardMarkup(
             keyboard=[
-                [KeyboardButton(text='Change')],
-                [KeyboardButton(text='Delete')],
-                [KeyboardButton(text='Add')],
-                [KeyboardButton(text='Back')]
+                [KeyboardButton(text="Change")],
+                [KeyboardButton(text="Delete")],
+                [KeyboardButton(text="Add")],
+                [KeyboardButton(text="Back")],
             ],
-            resize_keyboard=True
+            resize_keyboard=True,
         )
         self.setup_routes()
 
     def setup_routes(self) -> None:
         """Sets up command and message routes for the bot's functionalities."""
-        self.router.message(Command(commands=['start']))(self.start_command)
-        self.router.message(lambda message: message.text == 'Catalog')(self.get_request)
-        self.router.message(lambda message: message.text == 'Make Order')(self.make_order)
+        self.router.message(Command(commands=["start"]))(self.start_command)
+        self.router.message(lambda message: message.text == "Catalog")(self.get_request)
+        self.router.message(lambda message: message.text == "Make Order")(
+            self.make_order
+        )
         self.router.message.register(self.process_order_input, OrderStates.make_order)
-        self.router.message.register(self.process_shipping_input, OrderStates.shipping_address)
+        self.router.message.register(
+            self.process_shipping_input, OrderStates.shipping_address
+        )
 
         # Admin panel
-        self.router.message(lambda message: message.text == 'Admin')(self.admin_interface)
-        self.router.message(lambda message: message.text == 'Change')(self.edit_product)
-        self.router.message(lambda message: message.text == 'Delete')(self.delete_product)
-        self.router.message(lambda message: message.text == 'Add')(self.add_product)
-        self.router.message(lambda message: message.text == 'Back')(self.back_to_main_menu)
+        self.router.message(lambda message: message.text == "Admin")(
+            self.admin_interface
+        )
+        self.router.message(lambda message: message.text == "Change")(self.edit_product)
+        self.router.message(lambda message: message.text == "Delete")(
+            self.delete_product
+        )
+        self.router.message(lambda message: message.text == "Add")(self.add_product)
+        self.router.message(lambda message: message.text == "Back")(
+            self.back_to_main_menu
+        )
         self.router.message.register(self.find_goods, AdminPanel.get)
         self.router.message.register(self.send_patch, AdminPanel.patch)
         self.router.message.register(self.send_delete, AdminPanel.delete)
         self.router.message.register(self.send_post, AdminPanel.post)
 
     async def start_command(self, message: types.Message) -> None:
-        """Handles the /start command by displaying a welcome message and catalog.
-        """
-        await message.answer("Hello! I am your shop bot. Choose a command: Our goods Here", reply_markup=self.menu)
+        """Handles the /start command by displaying a welcome message and catalog."""
+        await message.answer(
+            "Hello! I am your shop bot. Choose a command: Our goods Here",
+            reply_markup=self.menu,
+        )
         await self.get_request(message)
 
     async def admin_interface(self, message: types.Message) -> None:
-        """Displays the admin menu with options for managing products.
-        """
-        await message.answer("You came to the admin panel. Choose what you want to do.", reply_markup=self.admin_menu)
+        """Displays the admin menu with options for managing products."""
+        await message.answer(
+            "You came to the admin panel. Choose what you want to do.",
+            reply_markup=self.admin_menu,
+        )
 
     async def edit_product(self, message: types.Message, state: FSMContext) -> None:
-        """Prompts the admin to enter the product name for editing.
-        """
+        """Prompts the admin to enter the product name for editing."""
         if not self.catalog_data:
             await self.get_request(message)
         await message.answer("Enter the name of the product you want to edit:")
-        await state.set_state(AdminPanel.get_goods)
+        await state.set_state(AdminPanel.get)
 
     async def find_goods(self, message: types.Message, state: FSMContext) -> None:
-        """Finds a product by name and prepares for patching.
-        """
+        """Finds a product by name and prepares for patching."""
         name = message.text
         if name not in self.catalog_data:
             await message.answer("This product is not available.")
             return
-        product_id = self.catalog_data[name]['id']
+        product_id = self.catalog_data[name]["id"]
         self.url = f"{urls['products']}{product_id}/"
         await self.get_request(message, self.url)
         await state.clear()
-        await message.answer('Specify the field to update (e.g., title="Nike Air Max").')
+        await message.answer(
+            'Specify the field to update (e.g., title="Nike Air Max").'
+        )
         await state.set_state(AdminPanel.patch)
 
     async def send_patch(self, message: types.Message, state: FSMContext) -> None:
-        """Sends a patch request to update product information.
-        """
-        name, value = message.text.split('=')
+        """Sends a patch request to update product information."""
+        if not message.text:
+            await message.answer(
+                "Something went wrong return to the main menu.",
+                reply_markup=self.menu
+            )
+            return
+        name, value = message.text.split("=")
         data = {name.strip(): value.strip()}
         response = requests.patch(self.url, json=data)
         if response.status_code == 200:
@@ -145,18 +163,22 @@ class TelegramBot:
             await message.answer("An error occurred while updating the product.")
 
     async def delete_product(self, message: types.Message, state: FSMContext) -> None:
-        """Prompts the admin to enter the product name for deletion.
-        """
+        """Prompts the admin to enter the product name for deletion."""
         if not self.catalog_data:
             await self.get_request(message)
         await message.answer("Enter the name of the product you want to delete:")
         await state.set_state(AdminPanel.delete)
 
     async def send_delete(self, message: types.Message, state: FSMContext) -> None:
-        """Sends a delete request for the specified product.
-        """
+        """Sends a delete request for the specified product."""
+        if not message.text:
+            await message.answer(
+                "Something went wrong return to the main menu.",
+                reply_markup=self.menu
+            )
+            return
         name = message.text
-        product_id = self.catalog_data[name]['id']
+        product_id = self.catalog_data[name]["id"]
         self.url = f"{urls['products']}{product_id}/"
         response = requests.delete(self.url)
         if response.status_code == 204:
@@ -166,24 +188,23 @@ class TelegramBot:
             await message.answer("An error occurred while deleting the product.")
 
     async def add_product(self, message: types.Message, state: FSMContext) -> None:
-        """Prompts the admin to enter details for a new product.
-        """
+        """Prompts the admin to enter details for a new product."""
         await message.answer("Enter product details (e.g., title=Chanel price=999).")
         await state.set_state(AdminPanel.post)
 
     async def send_post(self, message: types.Message, state: FSMContext) -> None:
-        """Sends a post request to add a new product to the catalog.
-        """
-        name, price = message.text.split(' ')
-        title = name.split('=')[-1]
-        price = float(price.split('=')[-1])
-        data = {
-            "title": title,
-            "slug": slugify(title),
-            "price": price,
-            "category": 2
-        }
-        response = requests.post(urls['products'], json=data)
+        """Sends a post request to add a new product to the catalog."""
+        if not message.text:
+            await message.answer(
+                "Something went wrong return to the main menu.",
+                reply_markup=self.menu
+            )
+            return
+        name, price = message.text.split(" ")
+        title = name.split("=")[-1]
+        price = float(price.split("=")[-1])
+        data = {"title": title, "slug": slugify(title), "price": price, "category": 2}
+        response = requests.post(urls["products"], json=data)
         if response.status_code == 201:
             await message.answer("New product added successfully.")
             await state.clear()
@@ -191,12 +212,13 @@ class TelegramBot:
             await message.answer("An error occurred while adding the product.")
 
     async def back_to_main_menu(self, message: types.Message) -> None:
-        """Returns the user to the main menu.
-        """
+        """Returns the user to the main menu."""
         await message.answer("Returning to the main menu.", reply_markup=self.menu)
 
-    async def get_request(self, message: types.Message, url: str = urls['products']) -> None:
-        """Fetches and displays the product catalog."""
+    async def get_request(
+            self, message: types.Message, url: str = urls["products"]
+    ) -> None:
+        """Requests the product catalog from the API and displays it to the user."""
 
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
@@ -204,35 +226,19 @@ class TelegramBot:
                     data = await response.json()
                     if isinstance(data, list):
                         catalog = "\n".join(
-                            [f"{index}. {item['title']} - {item['price']} USD" for index, item in enumerate(data, 1)]
+                            [
+                                f"{index}. {item['title']} - {item['price']} USD"
+                                for index, item in enumerate(data, 1)
+                            ]
                         )
                         await message.answer(f"Our product catalog:\n{catalog}")
-                        self.catalog_data = {item['title']: item for item in data}
+                        self.catalog_data = {item["title"]: item for item in data}
                     else:
                         await message.answer(f"Product:\n{data}")
                 else:
-                    await message.answer("Failed to fetch the product catalog. Please try again later.")
-
-    async def back_to_main_menu(self, message: types.Message) -> None:
-        """Sends a message to the user returning them to the main menu."""
-        await message.answer("Вы вернулись в главное меню.", reply_markup=self.menu)
-
-    async def get_request(self, message: types.Message, url: str = urls['products']) -> None:
-        """ Requests the product catalog from the API and displays it to the user. """
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if isinstance(data, list):
-                        catalog = "\n".join([f"{index}. {item['title']} - {item['price']} USD"
-                                             for index, item in enumerate(data, 1)])
-                        await message.answer(f"Our product catalog:\n{catalog}")
-                        self.catalog_data = {item['title']: item for item in data}
-                    else:
-                        await message.answer(f"Product:\n{data}")
-                else:
-                    await message.answer("Failed to fetch the product catalog. Please try again later.")
+                    await message.answer(
+                        "Failed to fetch the product catalog. Please try again later."
+                    )
 
     async def make_order(self, message: types.Message, state: FSMContext) -> None:
         """
@@ -242,24 +248,37 @@ class TelegramBot:
             await message.answer("Please view the catalog first by typing 'Catalog'.")
             return
 
-        await message.answer("Please enter the product name and quantity (e.g., Product 1 - 2 pcs)")
+        await message.answer(
+            "Please enter the product name and quantity (e.g., Product 1 - 2 pcs)"
+        )
         await state.set_state(OrderStates.make_order)
 
-    async def process_order_input(self, message: types.Message, state: FSMContext) -> None:
+    async def process_order_input(
+            self, message: types.Message, state: FSMContext
+    ) -> None:
         """
         Processes user input for creating an order, calculating the total price.
         """
         try:
-            product_name, quantity = message.text.split(' - ')
-            quantity = int(quantity.split(' ')[0])
+            if not message.text:
+                await message.answer(
+                    "Something went wrong return to the main menu.",
+                    reply_markup=self.menu
+                )
+                return
+            product_name, quantity = message.text.split(" - ")
+
             if product_name in self.catalog_data:
-                product = self.catalog_data[product_name]
-                total_price = product['price'] * quantity
-                self.cart = [{
-                    'product_name': product_name,
-                    'price': float(product['price']),
-                    'quantity': int(quantity)
-                }]
+                product_data = self.catalog_data[product_name]
+                total_price = float(product_data["price"]) * int(quantity)
+                price = float(product_data["price"])
+                self.cart = [
+                    {
+                        "product_name": product_name,
+                        "price": price,
+                        "quantity": int(quantity),
+                    }
+                ]
                 await message.answer(
                     f"You ordered {quantity} pcs of {product_name}.\n"
                     f"Total price: {total_price} USD.\n"
@@ -267,27 +286,47 @@ class TelegramBot:
 
                 await self.get_shipping_address(message, state)
             else:
-                await message.answer(f"The product '{product_name}' is not available in our catalog. Please try again.")
+                await message.answer(
+                    f"The product '{product_name}' is not available in our catalog. "
+                    f"Please try again."
+                )
         except ValueError:
             await message.answer(
-                "Invalid input format. Please use the format: Product name - quantity (e.g., Product 1 - 2 pcs).")
+                "Invalid input format. Please use the format: "
+                "Product name - quantity (e.g., Product 1 - 2 pcs)."
+            )
 
-    async def get_shipping_address(self, message: types.Message, state: FSMContext) -> None:
+    async def get_shipping_address(
+            self, message: types.Message, state: FSMContext
+    ) -> None:
         """
         Prompts the user to enter their shipping address in a specific format.
         """
-        await message.answer("Please enter the shipping address:\n"
-                             "You should write like example:\n"
-                             "John Smith, my_email@gmail.com, Gullweg, 18, Berlin, Germany")
+        await message.answer(
+            "Please enter the shipping address:\n"
+            "You should write like example:\n"
+            "John Smith, my_email@gmail.com, Gullweg, 18, Berlin, Germany"
+        )
         await state.set_state(OrderStates.shipping_address)
 
-    async def process_shipping_input(self, message: types.Message, state: FSMContext) -> None:
+    async def process_shipping_input(
+            self, message: types.Message, state: FSMContext
+    ) -> None:
         """
         Processes the user's shipping address input and sends an order to the API for processing.
         """
+
         try:
-            address_parts = message.text.split(', ')
-            full_name, email, street_address, apartment_address, city, country = address_parts
+            if not message.text:
+                await message.answer(
+                    "Something went wrong return to the main menu.",
+                    reply_markup=self.menu
+                )
+                return
+            address_parts = message.text.split(", ")
+            full_name, email, street_address, apartment_address, city, country = (
+                address_parts
+            )
 
             data = {
                 "shipping_address": {
@@ -298,19 +337,25 @@ class TelegramBot:
                     "city": city,
                     "country": country,
                 },
-                "cart_items": self.cart
+                "cart_items": self.cart,
             }
-            response = await asyncio.to_thread(requests.post, urls['checkout'], json=data)
+            response = await asyncio.to_thread(
+                requests.post, urls["checkout"], json=data
+            )
             if response.status_code == 201:
                 response_data = response.json()
-                checkout_url = response_data.get('checkout_url')
+                checkout_url = response_data.get("checkout_url")
                 await message.answer(
-                    f"Your order has been processed successfully! Complete your payment here: {checkout_url}")
+                    f"Your order has been processed successfully! "
+                    f"Complete your payment here: {checkout_url}"
+                )
             else:
-                await message.answer("There was an error processing your order. Please try again later.")
-        except requests.exceptions.JSONDecodeError as e:
+                await message.answer(
+                    "There was an error processing your order. Please try again later."
+                )
+        except requests.exceptions.JSONDecodeError:
             await message.answer("An error occurred while processing your order.")
-        except Exception as e:
+        except Exception:
             await message.answer("An error occurred while processing your order.")
         await state.clear()
 
