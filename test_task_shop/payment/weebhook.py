@@ -1,50 +1,68 @@
 import stripe
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 from payment.models import Order
+import json
 
 
 @csrf_exempt
-def stripe_webhook(request):
+def stripe_webhook(request: HttpRequest) -> HttpResponse:
+    """
+    Handle Stripe webhook events for payment processing, specifically listening to
+    'checkout.session.completed' events to mark orders as paid.
+    """
     payload = request.body
-    sig_header = request.META['HTTP_STRIPE_SIGNATURE']
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE', '')
     event = None
 
     try:
+        # Construct the Stripe event to verify its authenticity
         event = stripe.Webhook.construct_event(
-            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+            payload=payload,
+            sig_header=sig_header,
+            secret=settings.STRIPE_WEBHOOK_SECRET
         )
-    except ValueError as e:
-        # Invalid payload
+    except ValueError:
+        # Invalid payload; return a 400 response.
         return HttpResponse(status=400)
-    except stripe.error.SignatureVerificationError as e:
-        # Invalid signature
+    except stripe.error.SignatureVerificationError:
+        # Invalid signature; return a 400 response.
         return HttpResponse(status=400)
 
-    # Handle the checkout.session.completed event
-    if event['type'] == 'checkout.session.completed':
+    # Handle the 'checkout.session.completed' event
+    if event and event['type'] == 'checkout.session.completed':
         session = event['data']['object']
 
-        # Fulfill the purchase...
-        if session.mode == "payment" and session.payment_status == "paid":
-            try:
-                order_id = session.client_reference_id
-            except Order.DoesNotExist:
-                return HttpResponse(status=404)
-
-
-            order = Order.objects.get(id=order_id)
-            order.is_paid = True
-            order.save()
-
+        # Ensure the session has been paid before processing the order
+        if session.get('mode') == "payment" and session.get('payment_status') == "paid":
+            order_id = session.get('client_reference_id')
+            if order_id:
+                try:
+                    order = Order.objects.get(id=order_id)
+                    order.is_paid = True
+                    order.save()
+                except Order.DoesNotExist:
+                    # Order does not exist; return a 404 response.
+                    return HttpResponse(status=404)
 
     return HttpResponse(status=200)
 
 
 @csrf_exempt
 def bitpay_webhook(request):
-    print(request)
-    payload = request.body
-    print(payload)
-    return HttpResponse(payload, status=200)
+    data = json.loads(request.body.decode('utf-8'))
+    status = data['data']['status']
+
+    if status == "paid":
+        order_id = data['data']['orderId']
+        if order_id:
+            try:
+                order = Order.objects.get(id=order_id)
+                order.is_paid = True
+                order.save()
+            except Order.DoesNotExist:
+                return HttpResponse(status=404)
+
+    return HttpResponse(status=200)

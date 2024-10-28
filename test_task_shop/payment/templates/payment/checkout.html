@@ -47,7 +47,23 @@
 
 
 <br>
+<button id="buyCrypto">Купить Bitcoin</button>
 
+  <script src="https://buy.ramp.network"></script>
+  <script>
+    document.getElementById("buyCrypto").addEventListener("click", () => {
+      // Открываем виджет Ramp с необходимыми параметрами
+      Ramp.instantiate({
+        hostAppName: 'My App',
+        hostLogoUrl: 'https://example.com/my-logo.png', // URL логотипа
+        swapAmount: '100000', // сумма в центах, например 1000 означает $10.00
+        swapAsset: 'BTC', // код для Bitcoin
+        userAddress: '0xYourBitcoinAddress', // адрес кошелька для получения BTC
+        fiatCurrency: 'USD', // валюта для фиата
+        url: 'https://buy.ramp.network/', // URL виджета
+      }).show();
+    });
+  </script>
 
 </body>
 

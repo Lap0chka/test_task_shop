@@ -79,8 +79,7 @@ class CompleteOrderAPIView(APIView):
                 'quantity': item['quantity']
             })
 
-        # Создаем сессию оплаты в Stripe
+
         session = stripe.checkout.Session.create(**session_data)
 
-        # Возвращаем URL сессии Stripe
         return Response({'checkout_url': session.url}, status=status.HTTP_201_CREATED)

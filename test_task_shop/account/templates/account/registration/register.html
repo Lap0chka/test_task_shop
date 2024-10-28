@@ -2,7 +2,7 @@
 {% block title %}Register{%endblock%}
 
 {% load static %}
-{% load crispy_forms_tags %}
+
 
 {%block css%}
     <link rel="stylesheet" href="{% static 'css/register.css' %}">
@@ -17,7 +17,7 @@
     <br>
     <form method="post">
         {% csrf_token %}
-        {{ form|crispy }}
+        {{ form }}
         <input type="submit" value="Register" class="btn btn-secondary w-100 btn-block p-2 btn-register">
     </form>
 </div>
