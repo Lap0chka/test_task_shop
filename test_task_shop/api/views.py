@@ -1,11 +1,10 @@
 from decimal import Decimal
 
 import stripe
-from django.http import HttpRequest
-
 from api.serializers import (CartItemSerializer, ProductSerializer,
                              ShippingAddressSerializer)
 from django.conf import settings
+from django.http import HttpRequest
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from payment.models import Order, OrderItem, ShippingAddress
@@ -82,7 +81,9 @@ class CompleteOrderAPIView(APIView):
 
         # Create OrderItems and Stripe line items
         for item in cart_data:
-            product = get_object_or_404(Product, id=item["product_id"])  # Ensure product ID is in item data
+            product = get_object_or_404(
+                Product, id=item["product_id"]
+            )  # Ensure product ID is in item data
             OrderItem.objects.create(
                 order=order,
                 product=product,

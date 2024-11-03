@@ -76,6 +76,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 # Custom context_processors
                 "cart.context_processors.cart",
+                "shop.context_processors.categories",
             ],
         },
     },
@@ -147,3 +148,8 @@ STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET")
 # Bitpay
 
 BITPAY_SECRET = env("BITPAY_SECRET")
+
+# Simple Swap
+
+SIMPLE_SWAP = env("SIMPLE_SWAP")
+BTC_ADDRESS = env("BTC_ADDRESS")

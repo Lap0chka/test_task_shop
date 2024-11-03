@@ -1,10 +1,9 @@
 from typing import Optional
 
 from cart.cart import Cart
-from django.http import JsonResponse, HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from shop.models import Product
-
 
 
 def cart_view(request: HttpRequest) -> HttpResponse:

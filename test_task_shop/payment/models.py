@@ -191,10 +191,10 @@ class OrderItem(models.Model):
             int: Total quantity of the product sold.
         """
         return (
-                cls.objects.filter(product=product).aggregate(
-                    total_quantity=models.Sum("quantity")
-                )["total_quantity"]
-                or 0
+            cls.objects.filter(product=product).aggregate(
+                total_quantity=models.Sum("quantity")
+            )["total_quantity"]
+            or 0
         )
 
     @staticmethod

@@ -12,6 +12,7 @@ urlpatterns = [
     path("complete_order/", views.complete_order, name="complete_order"),
     path("checkout/", views.checkout, name="checkout"),
     path("pay_with_crypo", views.create_invoice_bit_pay, name="pay_with_crypo"),
+    path("excange", views.create_exchange_request, name="exchange"),
     path("webhook-stripe/", stripe_webhook, name="webhook-stripe"),
     path("webhook-bitpay/", bitpay_webhook, name="webhook-bitpat"),
 ]

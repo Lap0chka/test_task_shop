@@ -1,11 +1,12 @@
 import json
-from django.test import TestCase, Client, RequestFactory
-from django.urls import reverse
-from django.contrib.sessions.middleware import SessionMiddleware
-from django.http import HttpRequest, JsonResponse, HttpResponse
-from shop.models import Product, Category
-from .views import cart_view, cart_add, delete_product, cart_update
 
+from django.contrib.sessions.middleware import SessionMiddleware
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.test import Client, RequestFactory, TestCase
+from django.urls import reverse
+from shop.models import Category, Product
+
+from .views import cart_add, cart_update, cart_view, delete_product
 
 
 class CartViewTest(TestCase):
@@ -57,9 +58,12 @@ class CartAddViewTestCase(TestCase):
 
     def setUp(self) -> None:
         """
-        Sets up a category and product, and prepares a POST request for adding the product to the cart.
+        Sets up a category and product, and prepares a POST request for
+        adding the product to the cart.
         """
-        self.category: Category = Category.objects.create(name="Category 1", slug="category-1")
+        self.category: Category = Category.objects.create(
+            name="Category 1", slug="category-1"
+        )
         self.product: Product = Product.objects.create(
             title="Example Product",
             brand="Nike",
@@ -110,9 +114,12 @@ class CartDeleteViewTestCase(TestCase):
 
     def setUp(self) -> None:
         """
-        Sets up a category and product, and prepares a POST request for deleting the product from the cart.
+        Sets up a category and product, and prepares a POST request
+        for deleting the product from the cart.
         """
-        self.category: Category = Category.objects.create(name="Category 1", slug="category-1")
+        self.category: Category = Category.objects.create(
+            name="Category 1", slug="category-1"
+        )
         self.product: Product = Product.objects.create(
             title="Example Product",
             price=10.0,
@@ -135,7 +142,8 @@ class CartDeleteViewTestCase(TestCase):
 
     def test_cart_delete(self) -> None:
         """
-        Tests the `delete_product` view function, ensuring that the correct quantity is in the JSON response.
+        Tests the `delete_product` view function, ensuring that the
+        correct quantity is in the JSON response.
         """
         request = self.factory
         response: JsonResponse = delete_product(request)
@@ -164,7 +172,9 @@ class CartUpdateViewTestCase(TestCase):
         Sets up a category and product, and prepares POST requests for adding and updating
         the product in the cart.
         """
-        self.category: Category = Category.objects.create(name="Category 1", slug="category-1")
+        self.category: Category = Category.objects.create(
+            name="Category 1", slug="category-1"
+        )
         self.product: Product = Product.objects.create(
             title="Example Product",
             price=10.0,

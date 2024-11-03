@@ -1,12 +1,12 @@
 import json
+from typing import Any, Dict
 
 import stripe
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from stripe import SignatureVerificationError
-
 from payment.models import Order
+from stripe import SignatureVerificationError
 
 
 @csrf_exempt

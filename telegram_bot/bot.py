@@ -149,8 +149,7 @@ class TelegramBot:
         """Sends a patch request to update product information."""
         if not message.text:
             await message.answer(
-                "Something went wrong return to the main menu.",
-                reply_markup=self.menu
+                "Something went wrong return to the main menu.", reply_markup=self.menu
             )
             return
         name, value = message.text.split("=")
@@ -173,8 +172,7 @@ class TelegramBot:
         """Sends a delete request for the specified product."""
         if not message.text:
             await message.answer(
-                "Something went wrong return to the main menu.",
-                reply_markup=self.menu
+                "Something went wrong return to the main menu.", reply_markup=self.menu
             )
             return
         name = message.text
@@ -196,8 +194,7 @@ class TelegramBot:
         """Sends a post request to add a new product to the catalog."""
         if not message.text:
             await message.answer(
-                "Something went wrong return to the main menu.",
-                reply_markup=self.menu
+                "Something went wrong return to the main menu.", reply_markup=self.menu
             )
             return
         name, price = message.text.split(" ")
@@ -216,7 +213,7 @@ class TelegramBot:
         await message.answer("Returning to the main menu.", reply_markup=self.menu)
 
     async def get_request(
-            self, message: types.Message, url: str = urls["products"]
+        self, message: types.Message, url: str = urls["products"]
     ) -> None:
         """Requests the product catalog from the API and displays it to the user."""
 
@@ -254,7 +251,7 @@ class TelegramBot:
         await state.set_state(OrderStates.make_order)
 
     async def process_order_input(
-            self, message: types.Message, state: FSMContext
+        self, message: types.Message, state: FSMContext
     ) -> None:
         """
         Processes user input for creating an order, calculating the total price.
@@ -263,7 +260,7 @@ class TelegramBot:
             if not message.text:
                 await message.answer(
                     "Something went wrong return to the main menu.",
-                    reply_markup=self.menu
+                    reply_markup=self.menu,
                 )
                 return
             product_name, quantity = message.text.split(" - ")
@@ -297,7 +294,7 @@ class TelegramBot:
             )
 
     async def get_shipping_address(
-            self, message: types.Message, state: FSMContext
+        self, message: types.Message, state: FSMContext
     ) -> None:
         """
         Prompts the user to enter their shipping address in a specific format.
@@ -310,7 +307,7 @@ class TelegramBot:
         await state.set_state(OrderStates.shipping_address)
 
     async def process_shipping_input(
-            self, message: types.Message, state: FSMContext
+        self, message: types.Message, state: FSMContext
     ) -> None:
         """
         Processes the user's shipping address input and sends an order to the API for processing.
@@ -320,7 +317,7 @@ class TelegramBot:
             if not message.text:
                 await message.answer(
                     "Something went wrong return to the main menu.",
-                    reply_markup=self.menu
+                    reply_markup=self.menu,
                 )
                 return
             address_parts = message.text.split(", ")

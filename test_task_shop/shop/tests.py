@@ -1,8 +1,7 @@
-from typing import Optional
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, Client
-from django.urls import reverse
 from django.http import HttpResponse
+from django.test import TestCase
+from django.urls import reverse
 from shop.models import Category, Product
 
 

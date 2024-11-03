@@ -5,7 +5,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import ListView
 
-from .models import Product
+from .models import Category, Product
 
 
 class ProductListView(ListView):
@@ -34,3 +34,13 @@ def product_detail(request: HttpRequest, slug: str) -> HttpResponse:
     random_products = Product.available.order_by("?")[:4]
     context: Dict[str, Any] = {"product": product, "products": random_products}
     return render(request, "shop/product_detail.html", context)
+
+
+def category_list(request: HttpRequest, slug: str) -> HttpResponse:
+    """
+    View to display the products in a specific category.
+    """
+    category = get_object_or_404(Category, slug=slug)
+    products = Product.available.filter(category=category)
+    context = {"category": category, "products": products}
+    return render(request, "shop/category_list.html", context)

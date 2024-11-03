@@ -109,10 +109,12 @@ def complete_order(request: HttpRequest) -> HttpResponse:
                 }
             )
 
-        if "crypto-payment" not in type_payment:
+        if "stripe-payment" in type_payment:
             session_data["client_reference_id"] = order.id
             session = stripe.checkout.Session.create(**session_data)
             return redirect(session.url, code=303)
+        if "api_task" in type_payment:
+            return create_exchange_request(session_data)
         return create_invoice_bit_pay(session_data, order.id)
 
 
@@ -159,6 +161,66 @@ def create_invoice_bit_pay(session_data: dict, order_id: int) -> HttpResponse:
         error_message = f"HTTP error occurred: {e}"
         print(error_message)
         return JsonResponse({"error": error_message}, status=500)
+
+
+def create_exchange_request(session_data: dict) -> HttpResponse:
+    """
+    Sends a request to create a USD-to-BTC exchange through the SimpleSwap API.
+
+    Parameters:
+    - session_data (dict): Dictionary containing order data.
+      `session_data` is expected to include a 'line_items' key, which holds
+      a list of items, each with a 'price_data' -> 'unit_amount' key to calculate the total amount.
+    """
+
+    api_key = settings.SIMPLE_SWAP
+    btc_address = settings.BTC_ADDRESS
+    url = "https://api.simpleswap.io/create_exchange"
+
+    params = {
+        "api_key": api_key,
+    }
+
+    total = sum(
+        [item["price_data"]["unit_amount"] for item in session_data["line_items"]]
+    )
+    total /= 100
+
+    data = {
+        "fixed": False,
+        "currency_from": "usd",
+        "currency_to": "btc",
+        "amount": total,
+        "address_to": btc_address,
+        "extra_id_to": "",
+        "user_refund_address": "",
+        "user_refund_extra_id": "",
+    }
+
+    try:
+        response = requests.post(url, json=data, params=params)
+
+        if response.status_code == 200:
+            exchange_data = response.json()
+            redirect_url = exchange_data.get("redirect_url")
+            if redirect_url:
+                return redirect(redirect_url)
+            else:
+                return JsonResponse(
+                    {"error": "Missing redirect URL in response"}, status=500
+                )
+
+        else:
+            return JsonResponse(
+                {
+                    "error": "Failed to send request",
+                    "status_code": response.status_code,
+                },
+                status=response.status_code,
+            )
+
+    except requests.exceptions.RequestException as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 def payment_success(request: HttpRequest) -> HttpResponse:

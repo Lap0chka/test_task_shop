@@ -3,9 +3,9 @@ from typing import Any
 
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import QuerySet
 from django.urls import reverse
 from django.utils.text import slugify
-from django.db.models import QuerySet
 
 
 class ProductManage(models.Manager):
@@ -13,7 +13,7 @@ class ProductManage(models.Manager):
     Custom manager for the Product model to filter available products.
     """
 
-    def get_queryset(self) -> QuerySet['Product']:
+    def get_queryset(self) -> QuerySet["Product"]:
         """
         Returns a queryset of available products.
         """

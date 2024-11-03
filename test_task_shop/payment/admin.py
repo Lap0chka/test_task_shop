@@ -1,17 +1,21 @@
 import csv
 import datetime
-from typing import List, Any
+from typing import Any, List
+
 from django.contrib import admin
-from django.http import HttpResponse, HttpRequest
+from django.contrib.admin import ModelAdmin
 from django.db.models import Model, QuerySet
+from django.http import HttpRequest, HttpResponse
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import SafeString
-from django.contrib.admin import ModelAdmin
+
 from .models import Order, OrderItem, ShippingAddress
 
 
-def export_paid_to_csv(modeladmin: Any, request: HttpRequest, queryset: Any) -> HttpResponse:
+def export_paid_to_csv(
+    modeladmin: Any, request: HttpRequest, queryset: Any
+) -> HttpResponse:
     """
     Exports objects from the given queryset with a `True` value for `is_paid` to a CSV file.
     """
@@ -21,7 +25,11 @@ def export_paid_to_csv(modeladmin: Any, request: HttpRequest, queryset: Any) -> 
     response["Content-Disposition"] = content_disposition
     writer = csv.writer(response)
 
-    fields = [field for field in opts.get_fields() if not field.many_to_many and not field.one_to_many]
+    fields = [
+        field
+        for field in opts.get_fields()
+        if not field.many_to_many and not field.one_to_many
+    ]
     writer.writerow([field.verbose_name for field in fields])
 
     for obj in queryset:
@@ -40,7 +48,9 @@ def export_paid_to_csv(modeladmin: Any, request: HttpRequest, queryset: Any) -> 
 export_paid_to_csv.short_description = "Export Paid to CSV"
 
 
-def export_not_paid_to_csv(modeladmin: ModelAdmin, request: HttpResponse, queryset: QuerySet[Model]) -> HttpResponse:
+def export_not_paid_to_csv(
+    modeladmin: ModelAdmin, request: HttpResponse, queryset: QuerySet[Model]
+) -> HttpResponse:
     """
     Exports objects from the given queryset with a `False` value for `is_paid` to a CSV file.
     """
@@ -50,7 +60,11 @@ def export_not_paid_to_csv(modeladmin: ModelAdmin, request: HttpResponse, querys
     response["Content-Disposition"] = content_disposition
     writer = csv.writer(response)
 
-    fields = [field for field in opts.get_fields() if not field.many_to_many and not field.one_to_many]
+    fields = [
+        field
+        for field in opts.get_fields()
+        if not field.many_to_many and not field.one_to_many
+    ]
     writer.writerow([field.verbose_name for field in fields])
 
     for obj in queryset:
@@ -90,6 +104,7 @@ class ShippingAddressAdmin(admin.ModelAdmin):
         list_display_links (tuple): Fields that link to the detail view.
         list_filter (tuple): Fields to filter the list view by.
     """
+
     list_display = ("full_name_bold", "user", "email", "country", "city", "zip")
     empty_value_display = "-empty-"
     list_display_links = ("full_name_bold",)
@@ -107,10 +122,13 @@ class OrderItemInline(admin.TabularInline):
     """
     Inline configuration for Order Item in the admin interface.
     """
+
     model = OrderItem
     extra = 0
 
-    def get_readonly_fields(self, request: HttpResponse, obj: Model = None) -> List[str]:
+    def get_readonly_fields(
+        self, request: HttpResponse, obj: Model = None
+    ) -> List[str]:
         """
         Specifies fields to set as readonly if the object exists.
         """
@@ -123,11 +141,22 @@ class OrderAdmin(admin.ModelAdmin):
     """
     Admin interface for the Order model.
     """
+
     list_display = [
-        "id", "user", "shipping_address", "amount", "created", "updated", "is_paid", "discount", order_pdf,
+        "id",
+        "user",
+        "shipping_address",
+        "amount",
+        "created",
+        "updated",
+        "is_paid",
+        "discount",
+        order_pdf,
     ]
     list_filter = [
-        "is_paid", "updated", "created",
+        "is_paid",
+        "updated",
+        "created",
     ]
     inlines = [OrderItemInline]
     list_per_page = 15

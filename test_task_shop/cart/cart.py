@@ -1,8 +1,8 @@
-from shop.models import Product
-
-from typing import Iterator, Dict, Any
 from decimal import Decimal
+from typing import Any, Dict, Iterator
+
 from django.http import HttpRequest
+from shop.models import Product
 
 
 class Cart:
