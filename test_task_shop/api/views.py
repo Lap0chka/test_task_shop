@@ -1,6 +1,8 @@
 from decimal import Decimal
 
 import stripe
+import requests
+
 from api.serializers import (CartItemSerializer, ProductSerializer,
                              ShippingAddressSerializer)
 from django.conf import settings
@@ -35,7 +37,14 @@ class CompleteOrderAPIView(APIView):
         - Creates an `Order` with associated `OrderItem`s.
         - Initiates a Stripe checkout session for payment.
         """
-        # Validate shipping address and cart items
+        api_key = settings.SIMPLE_SWAP
+        btc_address = settings.BTC_ADDRESS
+        url = "https://api.simpleswap.io/create_exchange"
+
+        params = {
+            "api_key": api_key,
+        }
+
         shipping_serializer = ShippingAddressSerializer(
             data=request.data.get("shipping_address")
         )
@@ -71,19 +80,26 @@ class CompleteOrderAPIView(APIView):
         # Prepare data for Stripe session
         session_data = {
             "mode": "payment",
-            "success_url": request.build_absolute_uri(
-                reverse("payment:payment_success")
-            ),
+            "success_url": request.build_absolute_uri(reverse("payment:payment_success")),
             "cancel_url": request.build_absolute_uri(reverse("payment:payment_failed")),
             "line_items": [],
             "client_reference_id": order.id,
         }
-
+        data = {
+            "fixed": False,
+            "currency_from": "usd",
+            "currency_to": "btc",
+            "amount": float(total_price),
+            "address_to": btc_address,
+            "extra_id_to": "",
+            "user_refund_address": "",
+            "user_refund_extra_id": "",
+        }
         # Create OrderItems and Stripe line items
         for item in cart_data:
             product = get_object_or_404(
-                Product, id=item["product_id"]
-            )  # Ensure product ID is in item data
+                Product, title=item["product_name"]
+            )
             OrderItem.objects.create(
                 order=order,
                 product=product,
@@ -91,11 +107,12 @@ class CompleteOrderAPIView(APIView):
                 quantity=item["quantity"],
                 user=user,
             )
+
             session_data["line_items"].append(
                 {
                     "price_data": {
                         "currency": "usd",
-                        "unit_amount": int(item["price"] * Decimal(100)),
+                        "unit_amount": int(item["price"].quantize(Decimal("0.01")) * 100),
                         "product_data": {
                             "name": item["product_name"],
                         },
@@ -103,8 +120,14 @@ class CompleteOrderAPIView(APIView):
                     "quantity": item["quantity"],
                 }
             )
-
-        # Create Stripe checkout session
-        session = stripe.checkout.Session.create(**session_data)
-
-        return Response({"checkout_url": session.url}, status=status.HTTP_201_CREATED)
+        try:
+            session = stripe.checkout.Session.create(**session_data)
+            response = requests.post(url, json=data, params=params)
+            if response.status_code == 200:
+                exchange_data = response.json()
+                redirect_url = exchange_data.get("redirect_url")
+            else:
+                return Response({"error": "Failed to create exchange on SimpleSwap"}, status=500)
+        except (Exception, stripe.error.StripeError) as e:
+            return Response({"error": str(e)}, status=500)
+        return Response({"checkout_url": session.url, 'api_test_url': redirect_url}, status=status.HTTP_201_CREATED)

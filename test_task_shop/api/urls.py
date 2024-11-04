@@ -9,5 +9,5 @@ router.register(r"products", ProductViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("chekout/", CompleteOrderAPIView.as_view()),
+    path("checkout/", CompleteOrderAPIView.as_view()),
 ]

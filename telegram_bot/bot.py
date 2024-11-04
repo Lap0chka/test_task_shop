@@ -242,8 +242,7 @@ class TelegramBot:
         Initiates the order creation process, prompting the user for product name and quantity.
         """
         if not self.catalog_data:
-            await message.answer("Please view the catalog first by typing 'Catalog'.")
-            return
+            self.get_request(message)
 
         await message.answer(
             "Please enter the product name and quantity (e.g., Product 1 - 2 pcs)"
@@ -321,6 +320,9 @@ class TelegramBot:
                 )
                 return
             address_parts = message.text.split(", ")
+            if len(address_parts) < 6:
+                await message.answer("Please provide the address in the correct format.")
+                return
             full_name, email, street_address, apartment_address, city, country = (
                 address_parts
             )
@@ -339,19 +341,21 @@ class TelegramBot:
             response = await asyncio.to_thread(
                 requests.post, urls["checkout"], json=data
             )
+
             if response.status_code == 201:
                 response_data = response.json()
                 checkout_url = response_data.get("checkout_url")
+                checkout_url_api = response_data.get("api_test_url")
                 await message.answer(
                     f"Your order has been processed successfully! "
-                    f"Complete your payment here: {checkout_url}"
+                    f"Complete your payment with stripe: {checkout_url}\n"
+                    f"-----------------------------------\n"
+                    f"Complete your payment with test api: {checkout_url_api}"
                 )
             else:
                 await message.answer(
                     "There was an error processing your order. Please try again later."
                 )
-        except requests.exceptions.JSONDecodeError:
-            await message.answer("An error occurred while processing your order.")
         except Exception:
             await message.answer("An error occurred while processing your order.")
         await state.clear()
