@@ -20,10 +20,17 @@ class ProductListView(ListView):
 
     def get_queryset(self) -> QuerySet[Product]:
         """
-        Retrieve the queryset of available products.
-
+        Retrieve the queryset of available products, with optional sorting by price.
         """
-        return Product.available.all()
+        queryset = Product.available.all()
+        sort_order = self.request.GET.get('sort', 'asc')
+
+        if sort_order == 'desc':
+            queryset = queryset.order_by('-price')
+        else:
+            queryset = queryset.order_by('price')
+
+        return queryset
 
 
 def product_detail(request: HttpRequest, slug: str) -> HttpResponse:

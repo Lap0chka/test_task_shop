@@ -3,8 +3,11 @@ from decimal import Decimal
 import stripe
 import requests
 
-from api.serializers import (CartItemSerializer, ProductSerializer,
-                             ShippingAddressSerializer)
+from api.serializers import (
+    CartItemSerializer,
+    ProductSerializer,
+    ShippingAddressSerializer,
+)
 from django.conf import settings
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404
@@ -80,7 +83,9 @@ class CompleteOrderAPIView(APIView):
         # Prepare data for Stripe session
         session_data = {
             "mode": "payment",
-            "success_url": request.build_absolute_uri(reverse("payment:payment_success")),
+            "success_url": request.build_absolute_uri(
+                reverse("payment:payment_success")
+            ),
             "cancel_url": request.build_absolute_uri(reverse("payment:payment_failed")),
             "line_items": [],
             "client_reference_id": order.id,
@@ -97,9 +102,7 @@ class CompleteOrderAPIView(APIView):
         }
         # Create OrderItems and Stripe line items
         for item in cart_data:
-            product = get_object_or_404(
-                Product, title=item["product_name"]
-            )
+            product = get_object_or_404(Product, title=item["product_name"])
             OrderItem.objects.create(
                 order=order,
                 product=product,
@@ -112,7 +115,9 @@ class CompleteOrderAPIView(APIView):
                 {
                     "price_data": {
                         "currency": "usd",
-                        "unit_amount": int(item["price"].quantize(Decimal("0.01")) * 100),
+                        "unit_amount": int(
+                            item["price"].quantize(Decimal("0.01")) * 100
+                        ),
                         "product_data": {
                             "name": item["product_name"],
                         },
@@ -127,7 +132,12 @@ class CompleteOrderAPIView(APIView):
                 exchange_data = response.json()
                 redirect_url = exchange_data.get("redirect_url")
             else:
-                return Response({"error": "Failed to create exchange on SimpleSwap"}, status=500)
+                return Response(
+                    {"error": "Failed to create exchange on SimpleSwap"}, status=500
+                )
         except (Exception, stripe.error.StripeError) as e:
             return Response({"error": str(e)}, status=500)
-        return Response({"checkout_url": session.url, 'api_test_url': redirect_url}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"checkout_url": session.url, "api_test_url": redirect_url},
+            status=status.HTTP_201_CREATED,
+        )

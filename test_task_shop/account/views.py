@@ -25,9 +25,11 @@ def register(request: HttpRequest) -> HttpResponse:
             username = form.cleaned_data["username"]
             email = form.cleaned_data["email"]
             password = form.cleaned_data["password1"]
-            User.objects.create(
-                username=username, email=email, password=password, is_active=False
+            user = User.objects.create(
+                username=username, email=email, is_active=True
             )
+            user.set_password(password)
+            user.save()
             messages.success(request, f"Account was created for {username}")
             return redirect("account:login")
     else:
